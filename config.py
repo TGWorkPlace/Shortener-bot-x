@@ -35,3 +35,8 @@ BASE_URL = os.environ.get("BASE_URL", "").rstrip("/")
 
 # Length of the randomly generated short code
 SHORT_CODE_LENGTH = int(os.environ.get("SHORT_CODE_LENGTH", 6))
+
+# Optional API key to protect the public HTTP shortening endpoint
+# (GET /api?url=...). If left empty, the endpoint is open to anyone.
+# If set, callers must pass it as ?api_key=... or an "X-API-Key" header.
+API_KEY = os.environ.get("API_KEY", "")
