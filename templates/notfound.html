@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!--
+  Shown for both:
+    - GET /<code>   when the code doesn't exist (never got as far as the
+                      countdown page), and
+    - GET /r/<code> when the code doesn't exist at resolve time.
+  Contains no destination URL, obviously, since none was ever resolved.
+-->
+<title>Link not found</title>
+
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background: #ffffff;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  .wrap {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 24px;
+  }
+  .message {
+    color: #dc2626;
+    font-size: 22px;
+    font-weight: 600;
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="message">This link does not exist or has expired.</div>
+  </div>
+</body>
+</html>
