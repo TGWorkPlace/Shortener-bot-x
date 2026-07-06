@@ -46,8 +46,14 @@ import re
 from aiohttp import web
 
 import db
+import shortener
+from config import API_KEY
 
 logger = logging.getLogger(__name__)
+
+# created_by value used for links created through the public HTTP API
+# rather than through the Telegram bot itself.
+_API_CREATED_BY = 0
 
 _TEMPLATE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates")
 
@@ -131,10 +137,66 @@ async def resolve_handler(request):
     raise web.HTTPFound(location=original_url)
 
 
+async def api_shorten(request):
+    """
+    GET /api?url={url}
+
+    Public HTTP endpoint to create a shortened URL. Prints a JSON result
+    directly in the browser, e.g.:
+
+        GET https://domain.app/api?url=https://example.com/some/long/path
+
+        {
+          "status": "success",
+          "original_url": "https://example.com/some/long/path",
+          "short_url": "https://domain.app/A28UO"
+        }
+
+    If config.API_KEY is set, requests must include a matching key via
+    either the "?api_key=" query parameter or the "X-API-Key" header.
+    """
+    if API_KEY:
+        supplied = request.query.get("api_key") or request.headers.get("X-API-Key", "")
+        if supplied != API_KEY:
+            return web.json_response(
+                {"status": "error", "message": "Invalid or missing API key."},
+                status=401,
+            )
+
+    original_url = request.query.get("url", "").strip()
+    if not original_url:
+        return web.json_response(
+            {"status": "error", "message": "Missing required 'url' query parameter."},
+            status=400,
+        )
+
+    if not shortener.is_valid_url(original_url):
+        return web.json_response(
+            {"status": "error", "message": "Invalid URL. Must start with http:// or https://."},
+            status=400,
+        )
+
+    try:
+        short_url = await shortener.create_short_link(original_url, _API_CREATED_BY)
+    except Exception as e:
+        logger.error("API shorten failed for %s: %s", original_url, e)
+        return web.json_response(
+            {"status": "error", "message": "Failed to create short link."},
+            status=500,
+        )
+
+    return web.json_response({
+        "status": "success",
+        "original_url": original_url,
+        "short_url": short_url,
+    })
+
+
 def create_app():
     app = web.Application()
     app.router.add_get("/", root)
     app.router.add_get("/health", health)
+    app.router.add_get("/api", api_shorten)
     # Restrict to alphanumeric codes so this doesn't swallow other routes.
     app.router.add_get(r"/r/{code:[A-Za-z0-9]{3,16}}", resolve_handler)
     app.router.add_get(r"/{code:[A-Za-z0-9]{3,16}}", redirect_handler)
