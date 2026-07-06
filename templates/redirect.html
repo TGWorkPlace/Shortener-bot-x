@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!--
+  ARCHITECTURE NOTE:
+  This page intentionally does NOT contain a <meta http-equiv="refresh">
+  pointing at the destination, and does NOT contain the destination URL
+  anywhere in the markup, CSS, or JavaScript below.
+
+  The only backend-provided value on this page is the short "code" itself
+  (e.g. "A28UO"), which is already public knowledge -- it's the code the
+  visitor typed/clicked to get here. The actual destination URL is never
+  sent to the browser until the moment the browser is redirected: the
+  countdown and the button both simply navigate to "/r/<code>", a SECOND
+  endpoint which looks the code up server-side and issues an HTTP 302
+  redirect straight to the destination. The destination therefore never
+  appears in this document's source, in any inline script, or in any
+  JSON blob embedded in the page.
+-->
+<title>Redirecting…</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background: #ffffff;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  .wrap {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 24px;
+  }
+  .message {
+    color: #16a34a;
+    font-size: 22px;
+    font-weight: 600;
+    margin-bottom: 28px;
+  }
+  .message span {
+    font-variant-numeric: tabular-nums;
+  }
+  .btn {
+    display: inline-block;
+    background: #16a34a;
+    color: #ffffff;
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: 600;
+    padding: 14px 32px;
+    border-radius: 999px;
+    box-shadow: 0 4px 14px rgba(22, 163, 74, 0.35);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(22, 163, 74, 0.45);
+  }
+  .btn:active {
+    transform: translateY(0);
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="message">Redirecting in <span id="count">5</span> seconds…</div>
+    <!--
+      This href points at OUR OWN resolve endpoint ("/r/<code>"), never at
+      the destination. Clicking it triggers a normal browser navigation
+      request; the server resolves the code and responds with a 302
+      redirect to the real destination only at that point.
+    -->
+    <a class="btn" id="openLink" href="/r/__CODE__">Open Link</a>
+  </div>
+
+  <script>
+    (function () {
+      // Only the short code is known to this script -- NOT the destination
+      // URL. The code is not secret (it's already visible in this page's
+      // own URL path), so embedding it here leaks nothing new.
+      var code = "__CODE__";
+      var resolveUrl = "/r/" + encodeURIComponent(code);
+      var seconds = 5;
+      var countEl = document.getElementById("count");
+
+      var timer = setInterval(function () {
+        seconds -= 1;
+        if (seconds <= 0) {
+          clearInterval(timer);
+          // Navigate to our backend resolve endpoint. The browser only
+          // ever reaches the destination URL because THAT request gets a
+          // 3xx redirect response from the server -- the destination is
+          // never present in this page's JavaScript, DOM, or network
+          // payload up to this point.
+          window.location.replace(resolveUrl);
+          return;
+        }
+        countEl.textContent = seconds;
+      }, 1000);
+    })();
+  </script>
+</body>
+</html>
